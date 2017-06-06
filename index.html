@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <title>View Ray Casting</title>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <script src="js/three.js"></script>
+    <script src="js/Detector.js"></script>
+    <script src="js/OrbitControls.js"></script>
+    <script src="js/OBJLoader.js"></script>
+
+    <style>
+        body {
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            background: hsl(0, 0%, 10%);
+        }        
+    </style>
+
+</head>
+<body>
+    <script>
+
+        if (!Detector.webgl) {
+            Detector.addGetWebGLMessage();
+        }
+
+        var container;
+
+        var camera, controls, scene, renderer;
+        
+        init();
+        animate();
+
+        function init() {
+
+            container = document.createElement('div');
+            document.body.appendChild(container);
+
+            /* Camera */
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
+            camera.position.set(0,0,100);
+			camera.lookAt( new THREE.Vector3( 0, 0, 0 ) );
+
+            /* Scene */
+            scene = new THREE.Scene();
+            
+			/* Light */
+            var light = new THREE.PointLight(0xffffff);
+			light.position.set(-100,200,100);
+			scene.add(light);
+
+            /* Model */
+            var objLoader = new THREE.OBJLoader();
+            objLoader.setPath('assets/');
+            objLoader.load('rose.obj', function (object) {
+                scene.add( object );
+            });
+
+            /* Renderer */
+
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(new THREE.Color("hsl(0, 0%, 90%)"));
+
+            container.appendChild(renderer.domElement);
+			
+			/* Controls */
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            //controls.enableDamping = true;
+            //controls.dampingFactor = 0.25;
+            //controls.enableZoom = false;
+			window.addEventListener( 'mousedown', onDocumentMouseDown, false );
+        }
+		
+		function onDocumentMouseDown(e){
+			var raycaster = new THREE.Raycaster();
+			var mousePosition = new THREE.Vector2();
+			
+            mousePosition.x = 2 * (e.clientX / container.clientWidth) - 1;
+			mousePosition.y = 1 - 2 * ( e.clientY / container.clientHeight );
+			
+            raycaster.setFromCamera(mousePosition, camera);
+			
+            var intersects = raycaster.intersectObjects( scene.children , true);
+			
+            var INTERSECTED;
+            
+			for ( var i = 0; i < intersects.length; i++ ) {
+                
+                // Intersects returns all intersections for e.g. folded meshes might return two intersection.
+                // Handle only one instance of the intersection
+
+                if ( INTERSECTED != intersects[ 0 ].object ) {
+                    intersects[i].object.position.x = intersects[i].object.position.x + 10;
+                    INTERSECTED = intersects[ 0 ].object;
+                    console.log(intersects[0].object.name);
+                }
+			}
+
+		}
+		
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            render();
+        }
+
+        function render() {
+            renderer.render(scene, camera);
+        }
+
+    </script>
+
+</body>
+</html>
